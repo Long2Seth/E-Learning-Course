@@ -1,0 +1,8 @@
+spring:
+  data:
+    mongodb:
+    host: localhost
+    port: 27017
+    database: Course E-Learning
+    username: Course-E-Learning
+    password: course-e-learning
