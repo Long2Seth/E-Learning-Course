@@ -8,21 +8,28 @@ import co.istad.microservice.elearningcoursemanagment.feature.course.dto.CourseR
 import co.istad.microservice.elearningcoursemanagment.feature.course.dto.CourseResponseDetail;
 import co.istad.microservice.elearningcoursemanagment.feature.course.dto.SlugResponse;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface CourseMapper {
 
     Course courseRequestToCourse(CourseRequest courseRequest);
 
+
+    @Mapping(source = "category", target = "categoryName", qualifiedByName = "categoryToCategoryName")
     CourseResponse courseToCourseResponse(Course course);
 
+
+    @Mapping(source = "category", target = "categoryName", qualifiedByName = "categoryToCategoryName")
     CourseResponseDetail courseToCourseResponseDetail(Course course);
 
-    // Add this method
-    default String map(Category category) {
-        return category.getName();
-    }
-
     SlugResponse courseToSlugResponse(Course course);
+
+    @Named("categoryToCategoryName")
+    default String categoryToCategoryName(Category category) {
+        return (category != null && !category.getName().isEmpty()) ? category.getName() : "Uncategorized";
+    }
 
 }

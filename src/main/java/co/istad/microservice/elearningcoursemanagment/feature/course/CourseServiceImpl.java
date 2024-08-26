@@ -59,10 +59,13 @@ public class CourseServiceImpl implements CourseService {
 
         Course course = courseMapper.courseRequestToCourse(courseRequest);
         course.setUuid(UUID.randomUUID().toString());
+        course.setThumbnail("http://localhost:8080/image/" + courseRequest.thumbnail());
+        course.setInstructorName("Long Piseth");
         course.setCategory(category.get());
         course.setIsDeleted(false);
-        course.setIsDrafted(false);
+        course.setIsDrafted(true);
         course.setIsPaid(false);
+        course.setCreatedAt(LocalDateTime.now());
         course.setUpdatedAt( LocalDateTime.now());
         courseRepository.save(course);
 
@@ -166,19 +169,24 @@ public class CourseServiceImpl implements CourseService {
         PageRequest pageRequest = PageRequest.of(page, size, sort);
         Page<Course> coursePage = courseRepository.findAll(pageRequest);
 
+        // Debug: Log the categories
+        coursePage.forEach(course -> System.out.println("Course: " + course.getTitle() + ", Category: " + course.getCategory()));
+
         if ("CONTENT_DETAIL".equals(part)) {
             List<CourseResponseDetail> courseResponseDetailList = coursePage.stream()
-                    .filter(course -> !course.getIsDeleted() || course.getIsDrafted())
+                    .filter(course -> !course.getIsDeleted() && !course.getIsDrafted())
                     .map(courseMapper::courseToCourseResponseDetail)
                     .toList();
             return new PageImpl<>(courseResponseDetailList, pageRequest, coursePage.getTotalElements());
         } else {
             List<CourseResponse> courseResponseList = coursePage.stream()
-                    .filter(course -> !course.getIsDeleted() || course.getIsDrafted())
+                    .filter(course -> !course.getIsDeleted() && !course.getIsDrafted())
                     .map(courseMapper::courseToCourseResponse)
                     .toList();
             return new PageImpl<>(courseResponseList, pageRequest, coursePage.getTotalElements());
         }
+
+
     }
 
     @Override
@@ -368,7 +376,7 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course id = " + id + " not found")
                 );
-        course.setIsDeleted(true);
+        course.setIsDeleted(false);
         courseRepository.save(course);
 
     }
@@ -380,7 +388,7 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course id = " + id + " not found")
                 );
-        course.setIsDeleted(false);
+        course.setIsDeleted(true);
         courseRepository.save(course);
 
     }

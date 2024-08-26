@@ -146,8 +146,8 @@ public class CourseController {
     }
 
     @PutMapping("/{id}/is-paid")
-    public void updateIsPaidById(@PathVariable String id, @RequestBody UpdateThumbnail updateThumbnail) {
-        courseService.updateThumbnailById(id, updateThumbnail);
+    public void updateIsPaidById(@PathVariable String id, @RequestBody UpdateIsPaid updateThumbnail) {
+        courseService.updateIsPaidById(id, updateThumbnail);
     }
 
     @PutMapping("/{id}/enable")

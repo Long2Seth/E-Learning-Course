@@ -10,9 +10,6 @@ import java.util.List;
 
 public interface CategoryService {
 
-    /**
-     * Get all categories
-     */
     List<CategoryResponse> getAllCategories();
 
     List<PopularCategoryResponse> getPopularCategory();

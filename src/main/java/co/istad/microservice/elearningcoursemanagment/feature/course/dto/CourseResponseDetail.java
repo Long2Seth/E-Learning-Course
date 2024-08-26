@@ -10,8 +10,12 @@ public record CourseResponseDetail(
         String description,
         String thumbnail,
         double price,
+        double discount,
+        Boolean isPaid,
+        Boolean isDrafted,
         String content,
         String categoryName,
+        String instructorName,
         List<SectionResponse> sections,
         String updatedAt
 ) {

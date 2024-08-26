@@ -78,6 +78,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = categoryMapper.categoryRequestToCategory(categoryRequest);
         category.setUuid(UUID.randomUUID().toString());
+        category.setIcon("http://localhost:8080/image/" + categoryRequest.icon());
         categoryRepository.save(category);
 
     }

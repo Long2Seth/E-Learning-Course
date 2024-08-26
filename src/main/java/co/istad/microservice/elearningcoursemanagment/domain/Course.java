@@ -36,7 +36,7 @@ public class Course {
     private Boolean isDeleted;
 
     List<Section> sections = new ArrayList<>();
-    @DBRef
+    @DBRef(lazy = false)
     private Category category;
 
     private String instructorName;
