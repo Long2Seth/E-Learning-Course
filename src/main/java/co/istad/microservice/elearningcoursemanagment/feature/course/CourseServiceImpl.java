@@ -137,6 +137,19 @@ public class CourseServiceImpl implements CourseService {
 
         }
 
+    @Override
+    public List<CourseResponse> getCourseByInstructorName(String instructorName) {
+
+        List<Course> course = courseRepository.findAll()
+                .stream()
+                .filter(c -> c.getInstructorName().equals(instructorName))
+                .toList();
+
+        return course.stream()
+                .map(courseMapper::courseToCourseResponse)
+                .toList();
+    }
+
 
     @Override
     public Page<?> getAllCourses(int page, int size, String part) {

@@ -37,6 +37,13 @@ public class CourseController {
         return courseService.getAllCoursesSlug(slug);
     }
 
+
+    @GetMapping("/instructor/{instructorName}")
+    public List<CourseResponse> getCourseByInstructorName(@PathVariable String instructorName){
+        return courseService.getCourseByInstructorName(instructorName);
+    }
+
+
     @GetMapping("/private")
     public Page<CourseResponse> getAllPrivateCourses(@RequestParam(defaultValue = "0") int pageNumber,
                                                      @RequestParam(defaultValue = "25") int pageSize) {
@@ -61,19 +68,19 @@ public class CourseController {
         courseService.createCourse(courseRequest);
     }
 
-    @PostMapping("/{courseId}/section")
+    @PostMapping("/{courseId}/sections")
     @ResponseStatus(HttpStatus.CREATED)
     public void createSectionCourse(@PathVariable String courseId , @RequestBody SectionRequest sectionRequest){
         courseService.createSectionCourse(courseId,sectionRequest);
     }
 
-    @PostMapping("/{courseId}/video")
+    @PostMapping("/{courseId}/videos")
     @ResponseStatus(HttpStatus.CREATED)
     public void createVideoSection( @PathVariable String courseId , @RequestBody VideoRequest videoRequest){
         courseService.createVideoSection(courseId,videoRequest);
     }
 
-    @PutMapping("{courseId}/video")
+    @PutMapping("{courseId}/videos")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateVideoSection(@PathVariable String courseId , @RequestBody UpdateVideo updateVideo){
         courseService.updateVideoSection(courseId,updateVideo);

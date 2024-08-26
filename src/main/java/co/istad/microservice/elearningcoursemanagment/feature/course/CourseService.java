@@ -16,6 +16,8 @@ public interface CourseService {
 
     void updateVideoSection( String courseId , UpdateVideo updateVideo);
 
+    List<CourseResponse> getCourseByInstructorName(String instructorName);
+
     Page<?> getAllCourses(int page, int size, String part);
 
 

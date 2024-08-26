@@ -5,6 +5,7 @@ import co.istad.microservice.elearningcoursemanagment.domain.Category;
 import co.istad.microservice.elearningcoursemanagment.feature.category.dto.CategoryRequest;
 import co.istad.microservice.elearningcoursemanagment.feature.category.dto.CategoryResponse;
 import co.istad.microservice.elearningcoursemanagment.feature.category.dto.CategoryUpdate;
+import co.istad.microservice.elearningcoursemanagment.feature.category.dto.PopularCategoryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,12 @@ public class CategoryController {
     @GetMapping
     public List<CategoryResponse> getAllCategories() {
         return categoryService.getAllCategories();
+    }
+
+
+    @GetMapping("/popular")
+    public List<PopularCategoryResponse> getPopularCourse(){
+        return categoryService.getPopularCategory();
     }
 
     @PostMapping
