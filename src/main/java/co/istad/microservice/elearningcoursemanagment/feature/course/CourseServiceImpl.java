@@ -1,5 +1,6 @@
 package co.istad.microservice.elearningcoursemanagment.feature.course;
 
+import co.istad.microservice.elearningcoursemanagment.base.BaseFilter;
 import co.istad.microservice.elearningcoursemanagment.domain.Category;
 import co.istad.microservice.elearningcoursemanagment.domain.Course;
 import co.istad.microservice.elearningcoursemanagment.domain.Section;
@@ -16,11 +17,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.CriteriaDefinition;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +36,8 @@ import java.util.UUID;
 @Slf4j
 public class CourseServiceImpl implements CourseService {
 
+
+    private final MongoTemplate mongoTemplate;
     private final CourseRepository courseRepository;
     private final CategoryRepository categoryRepository;
     private final CourseMapper courseMapper;
@@ -153,6 +161,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public Page<?> getAllCourses(int page, int size, String part) {
+
         Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
         PageRequest pageRequest = PageRequest.of(page, size, sort);
         Page<Course> coursePage = courseRepository.findAll(pageRequest);
@@ -170,6 +179,74 @@ public class CourseServiceImpl implements CourseService {
                     .toList();
             return new PageImpl<>(courseResponseList, pageRequest, coursePage.getTotalElements());
         }
+    }
+
+    @Override
+    public Page<?> filterCourseByRequestBody(BaseFilter.FilterDto filterDto , int page , int size , String part) {
+
+        PageRequest request = PageRequest.of(page,size);
+        Page<Course> courses = courseRepository.findAll(request);
+
+        if ("CONTENT_DETAIL".equals(part)){
+            List<CourseResponseDetail> courseResponseDetails = courses.stream()
+                    .map(courseMapper::courseToCourseResponseDetail).toList();
+            return new PageImpl<>(courseResponseDetails,request,courses.getTotalElements());
+        }else {
+            List<CourseResponse> courseResponses = courses.stream()
+                    .map(courseMapper::courseToCourseResponse).toList();
+            return new PageImpl<>(courseResponses,request,courses.getTotalElements());
+        }
+
+    }
+
+    @Override
+    public Page<?> filterCourseByParameter(int page, int size, String filterAnd, String filterOr, String orders, String part) {
+        Query query = new Query();
+
+        // Add AND filters
+        if (filterAnd != null && !filterAnd.isEmpty()) {
+            List<Criteria> andCriteria = parseFilterCriteria(filterAnd);
+            query.addCriteria(new Criteria().andOperator(andCriteria.toArray(new Criteria[0])));
+        }
+
+        // Add OR filters
+        if (filterOr != null && !filterOr.isEmpty()) {
+            List<Criteria> orCriteria = parseFilterCriteria(filterOr);
+            query.addCriteria(new Criteria().orOperator(orCriteria.toArray(new Criteria[0])));
+        }
+
+        // Add sorting
+        if (orders != null && !orders.isEmpty()) {
+            Sort sort = parseSortOrders(orders);
+            query.with(sort);
+        }
+
+        // Apply pagination
+        PageRequest pageRequest = PageRequest.of(page, size);
+        query.with(pageRequest);
+
+        // Execute query
+        List<Course> courses = mongoTemplate.find(query, Course.class);
+
+        // Clone query for count operation to avoid conflict
+        Query countQuery = new Query((CriteriaDefinition) query.getQueryObject());
+        long count = mongoTemplate.count(countQuery, Course.class);
+
+        // Map results based on the part parameter
+        List<?> courseResponseList;
+        if ("CONTENT_DETAIL".equals(part)) {
+            courseResponseList = courses.stream()
+                    .filter(course -> !course.getIsDeleted() || course.getIsDrafted())
+                    .map(courseMapper::courseToCourseResponseDetail)
+                    .toList();
+        } else { // Assume SNIPPET or any other value returns CourseResponse
+            courseResponseList = courses.stream()
+                    .filter(course -> !course.getIsDeleted() || course.getIsDrafted())
+                    .map(courseMapper::courseToCourseResponse)
+                    .toList();
+        }
+
+        return new PageImpl<>(courseResponseList, pageRequest, count);
     }
 
     @Override
@@ -308,5 +385,71 @@ public class CourseServiceImpl implements CourseService {
 
     }
 
+
+
+    private List<Criteria> parseFilterCriteria(String filter) {
+        List<Criteria> criteriaList = new ArrayList<>();
+        String[] conditions = filter.split(",");
+
+        for (String condition : conditions) {
+            String[] parts = condition.split("\\|");
+            if (parts.length == 3) {
+                String field = parts[0];       // Field name, e.g., "name", "address", etc.
+                String operator = parts[1];    // Operator, e.g., "eq", "gt", "regex", etc.
+                String value = parts[2];       // Value to compare against, e.g., "mengseu", "pp", etc.
+
+                switch (operator.toLowerCase()) {
+                    case "eq":  // Equals
+                        criteriaList.add(Criteria.where(field).is(value));
+                        break;
+                    case "ne":  // Not Equals
+                        criteriaList.add(Criteria.where(field).ne(value));
+                        break;
+                    case "gt":  // Greater Than
+                        criteriaList.add(Criteria.where(field).gt(value));
+                        break;
+                    case "lt":  // Less Than
+                        criteriaList.add(Criteria.where(field).lt(value));
+                        break;
+                    case "gte": // Greater Than or Equal To
+                        criteriaList.add(Criteria.where(field).gte(value));
+                        break;
+                    case "lte": // Less Than or Equal To
+                        criteriaList.add(Criteria.where(field).lte(value));
+                        break;
+                    case "in":  // In List (multiple values separated by ";")
+                        criteriaList.add(Criteria.where(field).in(value.split(";")));
+                        break;
+                    case "nin": // Not In List (multiple values separated by ";")
+                        criteriaList.add(Criteria.where(field).nin(value.split(";")));
+                        break;
+                    case "regex": // Regular Expression (case-insensitive)
+                        criteriaList.add(Criteria.where(field).regex(value, "i"));
+                        break;
+                    case "exists": // Field Exists (true/false)
+                        criteriaList.add(Criteria.where(field).exists(Boolean.parseBoolean(value)));
+                        break;
+                    default:
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid operator: " + operator);
+                        // Add more operators as needed
+                }
+            }
+        }
+        return criteriaList;
+    }
+
+    private Sort parseSortOrders(String orders) {
+        List<Sort.Order> sortOrders = new ArrayList<>();
+        String[] orderConditions = orders.split(",");
+        for (String orderCondition : orderConditions) {
+            String[] parts = orderCondition.split("\\|");
+            if (parts.length == 2) {
+                String field = parts[0];
+                Sort.Direction direction = "desc".equalsIgnoreCase(parts[1]) ? Sort.Direction.DESC : Sort.Direction.ASC;
+                sortOrders.add(new Sort.Order(direction, field));
+            }
+        }
+        return Sort.by(sortOrders);
+    }
 
 }

@@ -1,6 +1,7 @@
 package co.istad.microservice.elearningcoursemanagment.feature.course;
 
 
+import co.istad.microservice.elearningcoursemanagment.base.BaseFilter;
 import co.istad.microservice.elearningcoursemanagment.feature.course.dto.*;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -31,6 +32,38 @@ public class CourseController {
             @RequestParam(defaultValue = "SNIPPET") String part) {
         return courseService.getAllCourses(page, size, part);
     }
+
+    @PostMapping("filter")
+    public Page<?> filter(
+            @RequestBody BaseFilter.FilterDto filterDto,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = "string", allowableValues = {"SNIPPET", "CONTENT_DETAIL"})
+            )
+            @RequestParam(defaultValue = "SNIPPET") String part
+    ){
+        return courseService.filterCourseByRequestBody(filterDto,page,size,part);
+    }
+
+
+    @GetMapping("/filter")
+    public Page<?> filterByParameter(
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(type = "string", allowableValues = {"SNIPPET", "CONTENT_DETAIL"})
+            )
+            @RequestParam(defaultValue = "SNIPPET") String part,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String filterAnd,
+            @RequestParam(required = false) String filterOr,
+            @RequestParam(required = false) String orders
+    ){
+        return courseService.filterCourseByParameter(page,size,filterAnd,filterOr,orders,part);
+    }
+
 
     @GetMapping("/slug/{slug}")
     public SlugResponse getCourseBySlug(@PathVariable String slug){

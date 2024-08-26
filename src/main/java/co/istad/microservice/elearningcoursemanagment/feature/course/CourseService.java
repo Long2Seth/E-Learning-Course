@@ -1,5 +1,6 @@
 package co.istad.microservice.elearningcoursemanagment.feature.course;
 
+import co.istad.microservice.elearningcoursemanagment.base.BaseFilter;
 import co.istad.microservice.elearningcoursemanagment.feature.course.dto.*;
 import org.springframework.data.domain.Page;
 
@@ -19,6 +20,10 @@ public interface CourseService {
     List<CourseResponse> getCourseByInstructorName(String instructorName);
 
     Page<?> getAllCourses(int page, int size, String part);
+
+    Page<?> filterCourseByRequestBody(BaseFilter.FilterDto filterDto , int page , int size , String part);
+
+    Page<?> filterCourseByParameter(int page, int size, String filterAnd, String filterOr, String orders, String part);
 
 
     SlugResponse getAllCoursesSlug( String slug );
